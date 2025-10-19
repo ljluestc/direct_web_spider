@@ -19,13 +19,22 @@ class TestBodyModel:
     @pytest.fixture(autouse=True)
     def setup_db(self):
         """Setup test database"""
+        # Disconnect any existing connections first
+        try:
+            disconnect(alias='default')
+        except:
+            pass
+        
         connect('testdb', host='localhost', mongo_client_class=__import__('mongomock').MongoClient, alias='default')
         Body.drop_collection()
         Product.drop_collection()
         yield
         Body.drop_collection()
         Product.drop_collection()
-        disconnect(alias='default')
+        try:
+            disconnect(alias='default')
+        except:
+            pass
 
     def test_body_creation(self):
         """Test Body creation"""

@@ -34,11 +34,11 @@ class TestDiggerPerformance:
         from spider.digger import DangdangDigger
         digger = DangdangDigger(mock_page)
         
-        with patch.object(digger, 'crawl_category') as mock_crawl:
+        with patch.object(digger, 'product_list') as mock_crawl:
             mock_crawl.return_value = [Mock() for _ in range(100)]
             
             start_time = time.time()
-            result = digger.crawl_category(Mock())
+            result = digger.product_list()
             end_time = time.time()
             
             assert end_time - start_time < 2.0  # Should crawl quickly
@@ -56,9 +56,9 @@ class TestDiggerPerformance:
         digger = DangdangDigger(mock_page)
         
         def crawl_worker():
-            with patch.object(digger, 'crawl_category') as mock_crawl:
+            with patch.object(digger, 'product_list') as mock_crawl:
                 mock_crawl.return_value = [Mock() for _ in range(10)]
-                return digger.crawl_category(Mock())
+                return digger.product_list()
         
         threads = []
         start_time = time.time()
@@ -87,13 +87,13 @@ class TestDiggerPerformance:
         from spider.digger import DangdangDigger
         digger = DangdangDigger(mock_page)
         
-        with patch.object(digger, 'crawl_category') as mock_crawl:
+        with patch.object(digger, 'product_list') as mock_crawl:
             mock_crawl.return_value = [Mock() for _ in range(100)]
             
             # Process in batches to test memory efficiency
             results = []
             for _ in range(10):
-                batch = digger.crawl_category(Mock())
+                batch = digger.product_list()
                 results.extend(batch)
                 # Simulate cleanup
                 del batch

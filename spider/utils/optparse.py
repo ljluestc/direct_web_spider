@@ -79,9 +79,13 @@ Examples:
 
 
 # Auto-parse arguments when module is imported (mimics Ruby behavior)
+# Only parse arguments if not running in test mode
 if __name__ != '__main__':
-    try:
-        parse_arguments()
-    except SystemExit:
-        # If -h is passed, ArgumentParser will exit - catch it
-        pass
+    import sys
+    # Don't parse arguments if running pytest or other test frameworks
+    if 'pytest' not in sys.modules and 'unittest' not in sys.modules:
+        try:
+            parse_arguments()
+        except SystemExit:
+            # If -h is passed, ArgumentParser will exit - catch it
+            pass

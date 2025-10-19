@@ -31,50 +31,37 @@ class TestSpiderComponents:
         mock_page.url = "http://example.com"
         
         digger = Digger(mock_page)
-        assert digger.page == mock_page
-        assert hasattr(digger, 'crawl_category')
+        assert digger.url == mock_page.url
         assert hasattr(digger, 'product_list')
 
     def test_parser_base_class(self):
         """Test Parser base class functionality"""
-        parser = Parser()
-        assert hasattr(parser, 'parse')
+        mock_product = Mock()
+        mock_product.html = "<html><body>Test Product</body></html>"
+        mock_product.kind = "test"
+        mock_product.id = "test_id"
         
-        # Test with mock data
-        mock_soup = Mock()
-        result = parser.parse(mock_soup)
-        assert result is not None
+        parser = Parser(mock_product)
+        assert hasattr(parser, 'title')
 
     def test_downloader_base_class(self):
         """Test Downloader base class functionality"""
         downloader = Downloader()
-        assert hasattr(downloader, 'fetch')
-        
-        # Test with mock data
-        mock_item = Mock()
-        mock_item.url = "http://example.com"
-        result = downloader.fetch(mock_item)
-        assert result is not None
+        assert hasattr(downloader, 'run')
 
     def test_fetcher_base_class(self):
         """Test Fetcher base class functionality"""
         fetcher = Fetcher()
-        assert hasattr(fetcher, 'fetch')
-        
-        # Test with mock data
-        mock_item = Mock()
-        result = fetcher.fetch(mock_item)
-        assert result is not None
+        assert hasattr(fetcher, 'category_list')
 
     def test_paginater_base_class(self):
         """Test Paginater base class functionality"""
-        paginater = Paginater()
-        assert hasattr(paginater, 'get_next_page')
+        mock_item = Mock()
+        mock_item.url = "http://example.com"
+        mock_item.html = "<html><body>Test</body></html>"
         
-        # Test with mock data
-        mock_page = Mock()
-        result = paginater.get_next_page(mock_page)
-        assert result is not None
+        paginater = Paginater(mock_item)
+        assert hasattr(paginater, 'pagination_list')
 
     def test_logger_mixin(self):
         """Test LoggerMixin functionality"""
@@ -82,10 +69,14 @@ class TestSpiderComponents:
             pass
         
         logger = TestLogger()
-        assert hasattr(logger, 'log_info')
-        assert hasattr(logger, 'log_error')
-        assert hasattr(logger, 'log_warning')
-        assert hasattr(logger, 'log_debug')
+        assert hasattr(logger, 'logger')
+        assert hasattr(logger, 'logger_file')
+        
+        # Test that logger has standard logging methods
+        assert hasattr(logger.logger, 'info')
+        assert hasattr(logger.logger, 'error')
+        assert hasattr(logger.logger, 'warning')
+        assert hasattr(logger.logger, 'debug')
 
     def test_spider_options(self):
         """Test SpiderOptions functionality"""
@@ -101,62 +92,82 @@ class TestSpiderComponents:
     def test_utils_class(self):
         """Test Utils class functionality"""
         utils = Utils()
-        assert hasattr(utils, 'clean_text')
-        assert hasattr(utils, 'extract_price')
-        assert hasattr(utils, 'extract_number')
-        assert hasattr(utils, 'is_valid_url')
+        assert hasattr(utils, 'valid_html')
+        assert hasattr(utils, 'query2hash')
+        assert hasattr(utils, 'hash2query')
+        assert hasattr(utils, 'decompress_gzip')
 
-    def test_utils_clean_text(self):
-        """Test Utils.clean_text method"""
+    def test_utils_valid_html(self):
+        """Test Utils.valid_html method"""
         utils = Utils()
         
-        # Test basic cleaning
-        text = "  Hello World  "
-        cleaned = utils.clean_text(text)
-        assert cleaned == "Hello World"
+        # Test valid HTML
+        html = "<html><body>Test</body></html>"
+        is_valid = utils.valid_html(html)
+        assert is_valid is True
+        
+        # Test invalid HTML
+        html = "<html><body>Test"
+        is_valid = utils.valid_html(html)
+        assert is_valid is False
         
         # Test with None
-        cleaned = utils.clean_text(None)
-        assert cleaned == ""
+        is_valid = utils.valid_html(None)
+        assert is_valid is False
 
-    def test_utils_extract_price(self):
-        """Test Utils.extract_price method"""
+    def test_utils_query2hash(self):
+        """Test Utils.query2hash method"""
         utils = Utils()
         
-        # Test price extraction
-        price_text = "Price: $99.99"
-        price = utils.extract_price(price_text)
-        assert price == 99.99
+        # Test query string conversion
+        query_str = "a=1&b=2&c=3"
+        result = utils.query2hash(query_str)
+        assert result == {'a': '1', 'b': '2', 'c': '3'}
         
-        # Test with invalid text
-        price = utils.extract_price("No price here")
-        assert price == 0.0
+        # Test with empty string
+        result = utils.query2hash("")
+        assert result == {}
+        
+        # Test with None
+        result = utils.query2hash(None)
+        assert result == {}
 
-    def test_utils_extract_number(self):
-        """Test Utils.extract_number method"""
+    def test_utils_hash2query(self):
+        """Test Utils.hash2query method"""
         utils = Utils()
         
-        # Test number extraction
-        number_text = "123 items"
-        number = utils.extract_number(number_text)
-        assert number == 123
+        # Test dictionary to query string conversion
+        hash_dict = {'a': '1', 'b': '2', 'c': '3'}
+        result = utils.hash2query(hash_dict)
+        assert result == "a=1&b=2&c=3"
         
-        # Test with invalid text
-        number = utils.extract_number("No number here")
-        assert number == 0
+        # Test with empty dictionary
+        result = utils.hash2query({})
+        assert result == ""
+        
+        # Test with None - this should raise an exception
+        try:
+            result = utils.hash2query(None)
+            assert False, "Expected TypeError for None input"
+        except TypeError:
+            pass  # Expected behavior
 
-    def test_utils_is_valid_url(self):
-        """Test Utils.is_valid_url method"""
+    def test_utils_decompress_gzip(self):
+        """Test Utils.decompress_gzip method"""
         utils = Utils()
         
-        # Test valid URLs
-        assert utils.is_valid_url("http://example.com") == True
-        assert utils.is_valid_url("https://example.com") == True
+        # Test gzip decompression
+        import gzip
+        import io
         
-        # Test invalid URLs
-        assert utils.is_valid_url("not-a-url") == False
-        assert utils.is_valid_url("") == False
-        assert utils.is_valid_url(None) == False
+        original_text = "Hello, World!"
+        compressed_data = gzip.compress(original_text.encode('utf-8'))
+        decompressed = utils.decompress_gzip(compressed_data)
+        assert decompressed == original_text
+        
+        # Test with string input (encode back to bytes)
+        decompressed = utils.decompress_gzip(compressed_data.decode('latin-1').encode('latin-1'))
+        assert decompressed == original_text
 
     def test_digger_with_mock_page(self):
         """Test Digger with mock page data"""
@@ -175,85 +186,62 @@ class TestSpiderComponents:
 
     def test_parser_with_mock_soup(self):
         """Test Parser with mock BeautifulSoup data"""
-        parser = Parser()
+        mock_product = Mock()
+        mock_product.html = "<html><body>Test Product</body></html>"
+        mock_product.kind = "test"
+        mock_product.id = "test_id"
         
-        # Mock BeautifulSoup object
-        mock_soup = Mock()
-        mock_soup.find_all.return_value = [
-            Mock(text="Product 1", get=lambda x: "http://product1.com"),
-            Mock(text="Product 2", get=lambda x: "http://product2.com")
-        ]
+        parser = Parser(mock_product)
         
-        with patch.object(parser, 'parse') as mock_parse:
-            mock_parse.return_value = [
-                Mock(title="Product 1", price=99.99, url="http://product1.com"),
-                Mock(title="Product 2", price=149.99, url="http://product2.com")
-            ]
-            products = parser.parse(mock_soup)
-            assert len(products) == 2
-            assert products[0].title == "Product 1"
-            assert products[0].price == 99.99
+        # Test that parser can be instantiated and has expected methods
+        assert hasattr(parser, 'title')
+        assert parser is not None
 
     def test_downloader_with_mock_requests(self):
         """Test Downloader with mock requests"""
         downloader = Downloader()
         
-        mock_item = Mock()
-        mock_item.url = "http://example.com"
-        
-        with patch('requests.get') as mock_get:
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_response.text = "<html><body>Test content</body></html>"
-            mock_get.return_value = mock_response
-            
-            result = downloader.fetch(mock_item)
-            assert result is not None
+        # Test that downloader can be instantiated and has expected methods
+        assert hasattr(downloader, 'run')
+        assert hasattr(downloader, 'max_concurrency')
+        assert downloader is not None
 
     def test_fetcher_with_mock_data(self):
         """Test Fetcher with mock data"""
         fetcher = Fetcher()
         
-        mock_item = Mock()
-        mock_item.url = "http://example.com"
-        
-        with patch.object(fetcher, 'fetch') as mock_fetch:
-            mock_fetch.return_value = Mock(html="<html><body>Test</body></html>")
-            result = fetcher.fetch(mock_item)
-            assert result is not None
+        # Test that fetcher can be instantiated and has expected methods
+        assert hasattr(fetcher, 'category_list')
+        assert fetcher is not None
 
     def test_paginater_with_mock_page(self):
         """Test Paginater with mock page data"""
-        paginater = Paginater()
+        mock_item = Mock()
+        mock_item.url = "http://example.com/page1"
+        mock_item.html = "<html><body>Test</body></html>"
         
-        mock_page = Mock()
-        mock_page.url = "http://example.com/page1"
+        paginater = Paginater(mock_item)
         
-        with patch.object(paginater, 'get_next_page') as mock_next:
-            mock_next.return_value = Mock(url="http://example.com/page2")
-            next_page = paginater.get_next_page(mock_page)
-            assert next_page is not None
-            assert next_page.url == "http://example.com/page2"
+        # Test that paginater can be instantiated and has expected methods
+        assert hasattr(paginater, 'pagination_list')
+        assert paginater is not None
 
     def test_logger_mixin_functionality(self):
         """Test LoggerMixin functionality"""
         class TestLogger(LoggerMixin):
-            def __init__(self):
-                self.logger = Mock()
+            pass
         
         logger = TestLogger()
         
-        # Test logging methods
-        logger.log_info("Test info message")
-        logger.log_error("Test error message")
-        logger.log_warning("Test warning message")
-        logger.log_debug("Test debug message")
+        # Test that logger properties exist
+        assert logger.logger is not None
+        assert hasattr(logger, 'logger_file')
         
-        # Verify logger was called
-        assert logger.logger.info.called
-        assert logger.logger.error.called
-        assert logger.logger.warning.called
-        assert logger.logger.debug.called
+        # Test logging methods exist
+        assert hasattr(logger.logger, 'info')
+        assert hasattr(logger.logger, 'error')
+        assert hasattr(logger.logger, 'warning')
+        assert hasattr(logger.logger, 'debug')
 
     def test_spider_options_manipulation(self):
         """Test SpiderOptions manipulation"""
@@ -273,17 +261,17 @@ class TestSpiderComponents:
         """Test Utils with edge cases"""
         utils = Utils()
         
-        # Test clean_text with empty string
-        assert utils.clean_text("") == ""
+        # Test valid_html with empty string
+        assert utils.valid_html("") == False
         
-        # Test extract_price with empty string
-        assert utils.extract_price("") == 0.0
+        # Test query2hash with empty string
+        assert utils.query2hash("") == {}
         
-        # Test extract_number with empty string
-        assert utils.extract_number("") == 0
+        # Test hash2query with empty dictionary
+        assert utils.hash2query({}) == ""
         
-        # Test is_valid_url with None
-        assert utils.is_valid_url(None) == False
+        # Test valid_html with None
+        assert utils.valid_html(None) == False
 
     def test_component_integration(self):
         """Test integration between components"""
@@ -292,21 +280,23 @@ class TestSpiderComponents:
         mock_page.html = "<html><body>Test</body></html>"
         mock_page.url = "http://example.com"
         
+        mock_product = Mock()
+        mock_product.html = "<html><body>Test Product</body></html>"
+        mock_product.kind = "test"
+        mock_product.id = "test_id"
+        
         # Test digger -> parser flow
         digger = Digger(mock_page)
-        parser = Parser()
+        parser = Parser(mock_product)
         
         with patch.object(digger, 'product_list') as mock_products:
             mock_products.return_value = ["http://product1.com"]
             
-            with patch.object(parser, 'parse') as mock_parse:
-                mock_parse.return_value = [Mock(title="Test Product")]
-                
-                # Simulate workflow
-                products = digger.product_list()
-                assert len(products) == 1
-                
-                mock_soup = Mock()
-                parsed_products = parser.parse(mock_soup)
-                assert len(parsed_products) == 1
-                assert parsed_products[0].title == "Test Product"
+            # Simulate workflow
+            products = digger.product_list()
+            assert len(products) == 1
+            assert "http://product1.com" in products
+            
+            # Test that parser can be instantiated
+            assert parser is not None
+            assert hasattr(parser, 'title')

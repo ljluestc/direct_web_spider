@@ -69,10 +69,10 @@ class TestCompleteCoverage:
         """Test all paginater modules for complete coverage"""
         try:
             from spider.paginater import DangdangPaginater
-            mock_item = {'url': 'http://test.com/category'}
-            mock_page = Mock()
-            mock_page.html = "<html><body>Test</body></html>"
-            paginater = DangdangPaginater(mock_item, mock_page)
+            mock_item = Mock()
+            mock_item.url = 'http://test.com/category'
+            mock_item.html = "<html><body>Test</body></html>"
+            paginater = DangdangPaginater(mock_item)
             assert paginater is not None
         except ImportError:
             pytest.skip("Paginater module not available")
@@ -676,6 +676,7 @@ class TestSpiderComponents:
                 mock_response = Mock()
                 mock_response.status_code = 200
                 mock_response.text = "<html><body>Test</body></html>"
+                mock_response.content = b"<html><body>json_category={\"test\":{\"u\":\"#dd#test\",\"n\":\"Test Category\"}}menudataloaded</body></html>"
                 mock_get.return_value = mock_response
                 
                 categories = fetcher.category_list()
@@ -703,10 +704,10 @@ class TestSpiderComponents:
         """Test paginater components for complete coverage"""
         try:
             from spider.paginater import DangdangPaginater
-            mock_item = {'url': 'http://test.com/category'}
-            mock_page = Mock()
-            mock_page.html = "<html><body>Test</body></html>"
-            paginater = DangdangPaginater(mock_item, mock_page)
+            mock_item = Mock()
+            mock_item.url = 'http://test.com/category'
+            mock_item.html = "<html><body>Test</body></html>"
+            paginater = DangdangPaginater(mock_item)
             
             # Test pagination_list method
             with patch.object(paginater, 'pagination_list') as mock_pagination:

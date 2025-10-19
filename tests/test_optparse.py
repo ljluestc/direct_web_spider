@@ -20,7 +20,7 @@ class TestOptparse:
     def test_optparse_add_option(self):
         """Test optparse add option"""
         parser = optparse.OptionParser()
-        parser.add_option('-v', '--verbose', action='store_true', help='Verbose output')
+        parser.add_option('-v', '--verbose', action='store_true', default=False, help='Verbose output')
         
         options, args = parser.parse_args([])
         assert hasattr(options, 'verbose')
@@ -51,9 +51,8 @@ class TestOptparse:
     def test_optparse_version(self):
         """Test optparse version"""
         parser = optparse.OptionParser(version='1.0.0')
-        parser.add_option('--version', action='version', version='1.0.0')
         
-        # Test version option
+        # Test version option - the parser already has --version when version is set
         try:
             options, args = parser.parse_args(['--version'])
         except SystemExit:

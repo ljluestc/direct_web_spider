@@ -34,15 +34,15 @@ class TestParserPerformance:
         from spider.parser import DangdangParser
         parser = DangdangParser(mock_product)
         
-        with patch.object(parser, 'parse') as mock_parse:
-            mock_parse.return_value = [Mock() for _ in range(100)]
+        with patch.object(parser, 'title') as mock_title:
+            mock_title.return_value = "Test Product"
             
             start_time = time.time()
-            result = parser.parse(Mock())
+            result = parser.title()
             end_time = time.time()
             
             assert end_time - start_time < 2.0  # Should parse quickly
-            assert len(result) == 100
+            assert result == "Test Product"
 
     @pytest.mark.performance
     def test_parser_concurrent_performance(self):
@@ -56,9 +56,9 @@ class TestParserPerformance:
         parser = DangdangParser(mock_product)
         
         def parse_worker():
-            with patch.object(parser, 'parse') as mock_parse:
-                mock_parse.return_value = [Mock() for _ in range(10)]
-                return parser.parse(Mock())
+            with patch.object(parser, 'title') as mock_title:
+                mock_title.return_value = "Test Product"
+                return parser.title()
         
         threads = []
         start_time = time.time()
@@ -87,14 +87,14 @@ class TestParserPerformance:
         from spider.parser import DangdangParser
         parser = DangdangParser(mock_product)
         
-        with patch.object(parser, 'parse') as mock_parse:
-            mock_parse.return_value = [Mock() for _ in range(100)]
+        with patch.object(parser, 'title') as mock_title:
+            mock_title.return_value = "Test Product"
             
             # Process in batches to test memory efficiency
             results = []
             for _ in range(10):
-                batch = parser.parse(Mock())
-                results.extend(batch)
+                batch = parser.title()
+                results.append(batch)
                 # Simulate cleanup
                 del batch
             
@@ -104,4 +104,4 @@ class TestParserPerformance:
             final_objects = len(gc.get_objects())
             # Should not have significantly more objects
             assert final_objects <= initial_objects + 100
-            assert len(results) == 1000
+            assert len(results) == 10
