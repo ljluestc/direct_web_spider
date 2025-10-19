@@ -78,9 +78,9 @@ locust>=2.17.0
 wrk>=0.1.0
 
 # Database testing
-testcontainers>=3.7.0
-pytest-postgresql>=5.0.0
-pytest-mysql>=2.2.0
+# testcontainers>=3.7.0
+# pytest-postgresql>=5.0.0  # Disabled - requires libpq
+# pytest-mysql>=2.2.0  # Disabled - not needed for MongoDB
 
 # API testing
 httpx>=0.24.0
