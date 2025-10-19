@@ -1,0 +1,3 @@
+"""
+Fetcher tests
+"""

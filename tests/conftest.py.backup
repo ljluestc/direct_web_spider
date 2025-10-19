@@ -1,0 +1,312 @@
+Pytest Configuration and Shared Fixtures
+"""
+import os
+import sys
+import pytest
+from unittest.mock import Mock, MagicMock, patch
+from datetime import datetime
+from mongoengine import connect, disconnect
+from bs4 import BeautifulSoup
+
+# Add project root to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+
+@pytest.fixture(scope='session')
+def mongodb_connection():
+    """Create MongoDB test connection"""
+    import mongomock
+    # Connect to test database using mongomock
+    conn = connect(
+        'testapp_test',
+        host='localhost',
+        mongo_client_class=mongomock.MongoClient,
+        alias='default'
+    )
+    yield conn
+    # Cleanup
+    disconnect(alias='default')
+
+
+@pytest.fixture(scope='function')
+def clean_db(mongodb_connection):
+    """Clean database before each test"""
+    from spider.models.category import Category
+    from spider.models.page import Page
+    from spider.models.product_url import ProductUrl
+    from spider.models.product import Product
+    from spider.models.brand import Brand
+    from spider.models.merchant import Merchant
+
+    # Drop all collections
+    Category.drop_collection()
+    Page.drop_collection()
+    ProductUrl.drop_collection()
+    Product.drop_collection()
+    Brand.drop_collection()
+    Merchant.drop_collection()
+
+    yield
+
+    # Cleanup after test
+    Category.drop_collection()
+    Page.drop_collection()
+    ProductUrl.drop_collection()
+    Product.drop_collection()
+    Brand.drop_collection()
+    Merchant.drop_collection()
+
+
+@pytest.fixture
+def mock_category():
+    """Mock Category object"""
+    mock = Mock()
+    mock.url = "http://example.com/category"
+    mock.name = "Test Category"
+    mock.kind = "dangdang"
+    mock.completed = False
+    mock.retry_time = 0
+    mock.id = "507f1f77bcf86cd799439011"
+    mock.save = Mock()
+    return mock
+
+
+@pytest.fixture
+def mock_page():
+    """Mock Page object"""
+    mock = Mock()
+    mock.url = "http://example.com/page"
+    mock.kind = "dangdang"
+    mock.completed = False
+    mock.retry_time = 0
+    mock.category_id = "507f1f77bcf86cd799439011"
+    mock.html = "<html><body><h1>Test</h1></body></html>"
+    mock.id = "507f1f77bcf86cd799439012"
+    mock.save = Mock()
+    return mock
+
+
+@pytest.fixture
+def mock_product_url():
+    """Mock ProductUrl object"""
+    mock = Mock()
+    mock.url = "http://example.com/product/12345"
+    mock.kind = "dangdang"
+    mock.completed = False
+    mock.retry_time = 0
+    mock.page_id = "507f1f77bcf86cd799439012"
+    mock.html = "<html><body><h1>Product</h1></body></html>"
+    mock.id = "507f1f77bcf86cd799439013"
+    mock.save = Mock()
+    return mock
+
+
+@pytest.fixture
+def mock_product():
+    """Mock Product object"""
+    mock = Mock()
+    mock.title = "Test Product"
+    mock.price = 99.99
+    mock.kind = "dangdang"
+    mock.stock = 10
+    mock.image_url = "http://example.com/image.jpg"
+    mock.score = 5
+    mock.product_url_id = "507f1f77bcf86cd799439013"
+    mock.id = "507f1f77bcf86cd799439014"
+    mock.save = Mock()
+    return mock
+
+
+@pytest.fixture
+def sample_html():
+    """Sample HTML for testing parsers"""
+    return """
+    <html>
+    <head><title>Test Page</title></head>
+    <body>
+        <div class="dp_wrap">
+            <h1>Test Product Title</h1>
+        </div>
+        <div id="salePriceTag">$99</div>
+        <img id="largePic" src="http://example.com/image.jpg" />
+        <p class="fraction">
+            <img src="star_red.png" />
+            <img src="star_red.png" />
+            <img src="star_red.png" />
+        </p>
+        <div class="mode_goods">
+            <div class="name">
+                <a href="http://example.com/product1">Product 1</a>
+            </div>
+            <div class="name">
+                <a href="http://example.com/product2">Product 2</a>
+            </div>
+        </div>
+        <div id="all_num">共100页</div>
+    </body>
+    </html>
+    """
+
+
+@pytest.fixture
+def sample_soup(sample_html):
+    """BeautifulSoup object from sample HTML"""
+    return BeautifulSoup(sample_html, 'lxml')
+
+
+@pytest.fixture
+def mock_requests_response():
+    """Mock requests.Response object"""
+    mock = Mock()
+    mock.status_code = 200
+    mock.content = b"<html><body>Test</body></html>"
+    mock.text = "<html><body>Test</body></html>"
+    mock.headers = {'Content-Type': 'text/html; charset=utf-8'}
+    return mock
+
+
+@pytest.fixture
+def mock_aiohttp_response():
+    """Mock aiohttp response"""
+    mock = MagicMock()
+    mock.status = 200
+    mock.read = MagicMock(return_value=b"<html><body>Test</body></html>")
+    mock.text = MagicMock(return_value="<html><body>Test</body></html>")
+    return mock
+
+
+@pytest.fixture
+def spider_options():
+    """Default SpiderOptions for testing"""
+    return {
+        'name': 'dangdang',
+        'environment': 'test',
+        'downloader': 'normal',
+        'number': 10
+    }
+
+
+@pytest.fixture
+def mock_logger():
+    """Mock logger object"""
+    logger = Mock()
+    logger.info = Mock()
+    logger.error = Mock()
+    logger.warning = Mock()
+    logger.debug = Mock()
+    return logger
+
+
+@pytest.fixture(autouse=True)
+def reset_spider_options():
+    """Reset SpiderOptions before each test"""
+    from spider.utils.optparse import SpiderOptions
+    SpiderOptions['name'] = 'dangdang'
+    SpiderOptions['environment'] = 'test'
+    SpiderOptions['downloader'] = 'normal'
+    SpiderOptions['number'] = 1000
+    yield
+    # Reset after test
+    SpiderOptions['name'] = 'dangdang'
+    SpiderOptions['environment'] = 'test'
+    SpiderOptions['downloader'] = 'normal'
+    SpiderOptions['number'] = 1000
+
+
+@pytest.fixture
+def temp_log_dir(tmp_path):
+    """Create temporary log directory"""
+    log_dir = tmp_path / "log"
+    log_dir.mkdir()
+    return log_dir
+
+
+@pytest.fixture
+def mock_mongodb_models():
+    """Mock all MongoDB models"""
+    with patch('spider.models.category.Category') as mock_category, \
+         patch('spider.models.page.Page') as mock_page, \
+         patch('spider.models.product_url.ProductUrl') as mock_product_url, \
+         patch('spider.models.product.Product') as mock_product:
+
+        yield {
+            'Category': mock_category,
+            'Page': mock_page,
+            'ProductUrl': mock_product_url,
+            'Product': mock_product
+        }
+
+
+# Test data fixtures
+@pytest.fixture
+def sample_categories():
+    """Sample category list"""
+    return [
+        {'name': 'Books', 'url': 'http://example.com/books'},
+        {'name': 'Electronics', 'url': 'http://example.com/electronics'},
+        {'name': 'Clothing', 'url': 'http://example.com/clothing'}
+    ]
+
+
+@pytest.fixture
+def sample_product_urls():
+    """Sample product URL list"""
+    return [
+        'http://example.com/product/1',
+        'http://example.com/product/2',
+        'http://example.com/product/3'
+    ]
+
+
+@pytest.fixture
+def sample_pagination_urls():
+    """Sample pagination URL list"""
+    return [
+        'http://example.com/list?p=1',
+        'http://example.com/list?p=2',
+        'http://example.com/list?p=3'
+    ]
+
+
+@pytest.fixture
+def sample_comments():
+    """Sample comment list"""
+    return [
+        {
+            'title': 'Great product',
+            'content': 'Very satisfied with this purchase',
+            'publish_at': datetime(2025, 1, 1, 12, 0, 0),
+            'star': 5
+        },
+        {
+            'title': 'Good value',
+            'content': 'Worth the price',
+            'publish_at': datetime(2025, 1, 2, 14, 30, 0),
+            'star': 4
+        }
+    ]
+
+
+# Performance fixtures
+@pytest.fixture
+def performance_timer():
+    """Timer for performance testing"""
+    import time
+
+    class Timer:
+        def __init__(self):
+            self.start_time = None
+            self.end_time = None
+
+        def start(self):
+            self.start_time = time.time()
+
+        def stop(self):
+            self.end_time = time.time()
+
+        def elapsed(self):
+            if self.start_time and self.end_time:
+                return self.end_time - self.start_time
+            return None
+
+    return Timer()

@@ -1,0 +1,3 @@
+"""
+Paginater tests
+"""

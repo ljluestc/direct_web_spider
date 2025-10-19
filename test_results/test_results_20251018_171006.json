@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-10-18T17:10:06.869632",
+  "duration": 51.657196044921875,
+  "total_tests": 0,
+  "passed": 0,
+  "failed": 0,
+  "skipped": 0,
+  "coverage": 0.0,
+  "test_suites": [
+    {
+      "name": "unit",
+      "tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "integration",
+      "tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "name": "all",
+      "tests": 0,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "performance_metrics": {},
+  "security_issues": [],
+  "code_quality_score": 0.0,
+  "memory_usage": {},
+  "cpu_usage": {}
+}

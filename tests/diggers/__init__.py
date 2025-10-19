@@ -1,0 +1,3 @@
+"""
+Digger tests
+"""
